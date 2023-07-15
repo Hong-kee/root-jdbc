@@ -1,0 +1,16 @@
+tx 는 변경과 관련하여 다음과 같은 step 을 밟는다.
+[tx 시작 -> lock 획득 -> update -> lock 반납]
+
+만일 세션 1,2가 동시에 접근 했고, 세션 1의 auto commit 기능이 꺼져있다고 해보자.
+세션 1 : [tx 시작 -> lock 획득 -> update]
+세션 2 : [세션 1의 update 후 tx 시작 -> lock 획득 시도 [대기] -> LOCK_TIMEOUT]
+commit 또는 rollback 을 하지 않으면 다음과 같이 다른 세션에서 lock 을 획득할 수 없기에 무한정 기다리게 된다. (DB 마다 TIMEOUT 시간이 설정 되어 있다.)
+
+따라서, 다음과 같은 step을 밟아야 한다.
+세션 1 : [tx 시작 -> lock 획득 -> update -> commit or rollback -> lock 반납]
+세션 2 : [세션 1의 update 후 tx 시작 -> lock 획득 시도 [대기] -> lock 획득 -> update -> commit or rollback -> lock 반납]
+
+Select 는 lock 획득 하지 않고 실행이 가능 하지만, lock 을 획득하는 경우가 있다.
+예를 들어서 애플리케이션 로직에서 memberA 의 금액을 조회한 다음에 이 금액 정보로 애플리케이션에서 어떤 계산을 수행한다.
+그런데 이 계산이 돈과 관련된 매우 중요한 계산이어서 계산을 완료할 때 까지 memberA 의 금액을 다른곳에서 변경하면 안 된다.
+이럴 때 조회 시점에 lock 을 획득하면 된다. 이 경우에는 Select For Update 를 쓰면 된다.
