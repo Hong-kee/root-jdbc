@@ -8,7 +8,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -52,17 +51,6 @@ public class MemberServiceV3_1 {
         memberRepository.update(fromId, fromMember.getMoney() - money);
         validation(toMember);
         memberRepository.update(toId, toMember.getMoney() + money);
-    }
-
-    private static void release(Connection connection) {
-        if (connection != null) {
-            try {
-                connection.setAutoCommit(true); // 커넥션 풀 고려해서 오토커밋 상태로 세팅하고 돌려준다. (디폴트가 true 라서)
-                connection.close();
-            } catch (Exception e) {
-                log.info("Error", e);
-            }
-        }
     }
 
     private static void validation(Member toMember) {
